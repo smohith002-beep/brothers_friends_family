@@ -42,24 +42,18 @@
 
 ---
 
-## 4. Default Seed Credentials
+## 4. Seeded Accounts
 
-The database has been seeded with realistic administrative, fellowship, and project data.
+The seed command creates the administrator using the `ADMIN_DEFAULT_EMAIL` and
+`ADMIN_DEFAULT_PASSWORD` values in your untracked `.env` file. Use a unique password
+of at least 16 characters. Sample fellow accounts receive random, undisclosed passwords
+and are not intended for sign-in.
 
 ### Executive Root Administrator
-- **Email:** `admin@bff.com`
-- **Password:** `Admin@BFF2026!`
+- **Email:** Set with `ADMIN_DEFAULT_EMAIL`
+- **Password:** Set with `ADMIN_DEFAULT_PASSWORD`
 - **Role:** `SUPER_ADMIN`
 - **Access:** Complete platform administration, system settings, member approvals, role management, and audit logs (`/admin`).
-
-### Verified Fellows & Project Managers
-- **Marcus Vance (Mindset Lead):** `marcus.vance@bff.org` | Password: `Member@BFF2026!`
-- **Dr. Elena Rostova (Solutions Architect):** `elena.rostova@bff.org` | Password: `Member@BFF2026!`
-- **David Chen (Venture Partner):** `david.chen@bff.org` | Password: `Member@BFF2026!`
-- **Amara Okafor (Social Impact Director):** `amara.okafor@bff.org` | Password: `Member@BFF2026!`
-- **Priya Sharma (AI Specialist):** `priya.sharma@bff.org` | Password: `Member@BFF2026!`
-
-*(Note: Instant 1-click test buttons for these accounts are available on `/login`.)*
 
 ---
 
@@ -75,6 +69,9 @@ npm install
 ```
 
 ### 3. Database Generation & Seeding
+Set `ADMIN_DEFAULT_EMAIL` and `ADMIN_DEFAULT_PASSWORD` in `.env` before seeding.
+Never use demo credentials in production.
+
 ```bash
 npm run db:setup
 ```
@@ -143,25 +140,33 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 To deploy to production using Vercel, Supabase, Neon, or Railway with a managed PostgreSQL database:
 
-1. **Database Schema:** Use the included PostgreSQL schema:
-   ```bash
-   cp prisma/schema.postgresql.prisma prisma/schema.prisma
-   ```
-2. **Environment Variables:** Set the following variables in your hosting environment:
+1. **Database:** Create or select a managed PostgreSQL database. The Vercel build
+   generates Prisma Client from `prisma/schema.postgresql.prisma`; local development
+   continues to use SQLite.
+2. **Environment Variables:** Set the following variables in Vercel:
    ```env
    POSTGRES_PRISMA_URL="postgresql://user:password@host:5432/bff_ecosystem?sslmode=require"
-   JWT_SECRET="generate-a-strong-32-byte-hex-key"
+   JWT_SECRET="<at least 32 randomly generated characters>"
    NEXT_PUBLIC_APP_URL="https://your-production-domain.com"
-   ADMIN_DEFAULT_EMAIL="admin@bff.com"
-   ADMIN_DEFAULT_PASSWORD="YourStrongAdminPassword!"
+   ADMIN_DEFAULT_EMAIL="<your administrator email>"
+   ADMIN_DEFAULT_PASSWORD="<unique password of at least 16 characters>"
    ```
-3. **Database Migration & Build:**
+   Set these values in Vercel Project Settings → Environment Variables for the
+   Production environment. Do not expose secrets through `NEXT_PUBLIC_` variables.
+3. **Database Migration:** This repository now includes a PostgreSQL initial migration.
+   Back up the database before applying it. For a new, empty database, run:
    ```bash
-   npx prisma db push
-   node prisma/seed.js
-   npm run build
+   npm run prisma:migrate:deploy:postgres
    ```
-4. **Deploy:** Deploy directly via Git to Vercel, Railway, AWS ECS, or Render.
+   The production database used for the reported P2021 error may already contain data
+   but has no migration history in this repository. Do not apply the initial migration
+   blindly to that database. First back it up and inspect its tables. If it is an
+   existing database, compare it with the PostgreSQL schema and baseline or synchronize
+   it deliberately; never use `--accept-data-loss`. `npm run prisma:push:postgres` is
+   available for a reviewed schema sync and may ask before destructive changes.
+4. **Deploy:** After confirming the database schema is current, push the branch to Git
+   and deploy through Vercel. The build script generates the PostgreSQL Prisma Client
+   automatically when `VERCEL=1`.
 
 ---
 

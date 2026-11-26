@@ -5,12 +5,18 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { BffLogo } from "@/components/brand/BffLogo";
-import { Lock, Mail, AlertCircle, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectUrl =
+    requestedRedirect?.startsWith("/") &&
+    !requestedRedirect.startsWith("//") &&
+    !requestedRedirect.includes("\\")
+      ? requestedRedirect
+      : "/dashboard";
   const { refreshUser } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -47,11 +53,6 @@ function LoginForm() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const fillQuickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
   };
 
   return (
@@ -120,37 +121,6 @@ function LoginForm() {
           </button>
         </form>
 
-        {/* Quick Test Demo Credentials Box */}
-        <div className="pt-4 border-t border-slate-800/80 space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Instant Demo Access:
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => fillQuickLogin("admin@bff.com", "Admin@BFF2026!")}
-              className="p-2 rounded-lg bg-slate-900 border border-slate-700 text-left hover:border-cyan-400 transition-colors"
-            >
-              <div className="text-[11px] font-bold text-white flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-amber-400" />
-                Super Admin
-              </div>
-              <div className="text-[9px] text-slate-400 font-mono">admin@bff.com</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillQuickLogin("marcus.vance@bff.org", "Member@BFF2026!")}
-              className="p-2 rounded-lg bg-slate-900 border border-slate-700 text-left hover:border-cyan-400 transition-colors"
-            >
-              <div className="text-[11px] font-bold text-white flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-cyan-400" />
-                Lead Fellow
-              </div>
-              <div className="text-[9px] text-slate-400 font-mono">marcus.vance...</div>
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="text-center text-xs text-slate-400 space-y-1">

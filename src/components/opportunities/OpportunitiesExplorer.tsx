@@ -59,19 +59,38 @@ export function OpportunitiesExplorer({ initialOpportunities }: { initialOpportu
     setSubmitting(true);
     setFeedback(null);
 
-    // Simulate saving opportunity interest
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const response = await fetch("/api/opportunities/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          opportunityId: selectedOpp.id,
+          pitchMessage: pitchMessage.trim(),
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to submit your application.");
+      }
+
       setFeedback({
         type: "success",
-        msg: `Your interest in '${selectedOpp.title}' has been transmitted to ${selectedOpp.organization}.`,
+        msg: `Your application for '${selectedOpp.title}' has been submitted.`,
       });
       setTimeout(() => {
         setSelectedOpp(null);
         setPitchMessage("");
         setFeedback(null);
       }, 2000);
-    }, 800);
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        msg: error instanceof Error ? error.message : "Failed to submit your application.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -205,7 +224,7 @@ export function OpportunitiesExplorer({ initialOpportunities }: { initialOpportu
 
               <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
                 <ShieldCheck className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <span>Your verified BFF Member Profile details will be securely shared with the opportunity lead.</span>
+                <span>Your application will be recorded for review by the opportunity lead.</span>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

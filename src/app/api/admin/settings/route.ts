@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const settings = await prisma.systemSetting.findMany({
+      where: { isPublic: true },
       orderBy: { key: "asc" },
     });
     return NextResponse.json({ settings });
@@ -38,7 +39,7 @@ export async function PUT(request: Request) {
         userEmail: user.email,
         action: "SYSTEM_SETTING_UPDATED",
         module: "SYSTEM",
-        details: `Updated system setting '${key}' to: '${value}'`,
+        details: `Updated system setting '${key}'`,
       },
     });
 

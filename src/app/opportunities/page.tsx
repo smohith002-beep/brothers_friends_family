@@ -12,6 +12,7 @@ export const revalidate = 30;
 
 export default async function OpportunitiesPage() {
   const opportunities = await prisma.opportunity.findMany({
+    where: { status: "OPEN" },
     include: {
       author: { select: { name: true, avatarUrl: true } },
     },

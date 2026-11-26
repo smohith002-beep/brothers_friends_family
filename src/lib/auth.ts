@@ -3,8 +3,15 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 
-const JWT_SECRET = process.env.JWT_SECRET || "bff_super_secret_jwt_key_production_grade_389472394872";
+const JWT_SECRET = process.env.JWT_SECRET;
 export const AUTH_COOKIE_NAME = "bff_auth_token";
+
+function getJwtSecret(): string {
+  if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET must be configured with at least 32 characters");
+  }
+  return JWT_SECRET;
+}
 
 export interface TokenPayload {
   userId: string;
@@ -23,45 +30,42 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function signToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string): TokenPayload | null {
+  const secret = getJwtSecret();
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch (error) {
+    return jwt.verify(token, secret) as TokenPayload;
+  } catch {
     return null;
   }
 }
 
 export async function getCurrentUser() {
-  try {
-    const cookieStore = cookies();
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-    if (!token) return null;
+  const cookieStore = cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+  if (!token) return null;
 
-    const payload = verifyToken(token);
-    if (!payload?.userId) return null;
+  const payload = verifyToken(token);
+  if (!payload?.userId) return null;
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      include: {
-        profile: true,
-        assignedRoles: {
-          include: { role: true },
-        },
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    include: {
+      profile: true,
+      assignedRoles: {
+        include: { role: true },
       },
-    });
+    },
+  });
 
-    if (!user || user.status === "SUSPENDED" || user.status === "DEACTIVATED") {
-      return null;
-    }
-
-    const { passwordHash, ...safeUser } = user;
-    return safeUser;
-  } catch (error) {
+  if (!user || user.status === "SUSPENDED" || user.status === "DEACTIVATED") {
     return null;
   }
+
+  const { passwordHash, ...safeUser } = user;
+  return safeUser;
 }
 
 export function requireRole(userRole: string, allowedRoles: string[]): boolean {
